@@ -1,20 +1,26 @@
 #!/usr/bin/env ruby
 
+#***********************#
+# example:
+#   ruby porkrub.rb -owner iain tris -year 2014
+#***********************#
+
 require 'rubygems'
 require 'nokogiri'
 require 'open-uri'
 
-num_args = ARGV.count
+#***********************#
+# Argument Handling Begin
+num_args = ARGV.count # currently unused
 
-if num_args == 0
-  istart = 1
-  iend = 12
-else
-  istart = "#{ARGV[0]}"
-  iend = "#{ARGV[0]}"
-end
+param_season = ARGV.find_index { |arg| arg == "-year" || arg == "-season"}
+season = ARGV[param_season + 1]
 
-
+param_member = ARGV.find_index { |arg| arg == "-member" || arg == "-owner"}
+num_members = 1
+num_members += 1 until !ARGV[num_members + param_member] || ARGV[num_members + param_member].chr == "-"
+# Argument Handling End
+#***********************#
 
 members = Hash.new("does not exist")
 members = {
@@ -35,15 +41,13 @@ members = {
   mike: 12,
 }
 
-#puts members[istart.to_sym]
-
 result_all=[]
-for team in 0...num_args
+for team in param_member + 1 ... param_member + num_members
   puts"*******************************"
-  puts "***Team #{ARGV[team].capitalize}***"
+  puts "*** Team #{ARGV[team].capitalize}, #{season} Season ***"
   puts"*******************************"
 
-  uri = "http://games.espn.com/ffl/schedule?leagueId=#{members[:leagueid]}&teamId=#{members[ARGV[team].to_sym]}"
+  uri = "http://games.espn.com/ffl/schedule?leagueId=#{members[:leagueid]}&teamId=#{members[ARGV[team].to_sym]}&seasonId=#{season}"
   doc = Nokogiri::HTML(open(uri))
   scores = doc.search('nobr')
 
@@ -80,18 +84,21 @@ for team in 0...num_args
     diff_neg << diff if diff < 0
   end
   
+  
+  
   puts"*******************************"
   puts "Win-Loss-Tie record: #{record_wl.count("W")} - #{record_wl.count("L")} - #{record_wl.count("T")}"
   puts "Total points: #{tot_my.round(1)}"
   puts "Average score: #{avg_my.round(1)}"  
   puts "Highest score: #{score_my.max}"
   puts "Lowest score: #{score_my.min}"
-  puts "Widest margin of victory: #{score_diff.max.round(1)}" if score_diff.max > 0
-  puts "Slimmest margin of victory: #{diff_pos.min.round(1)}"
-  puts "Slimmest margin of defeat: #{diff_neg.max.round(1)}"
-  puts "Widest margin of defeat: #{score_diff.min.round(1)}" if score_diff.min < 0
+  puts "Widest margin of victory: #{score_diff.max.round(1)}" if record_wl.count("W") > 0
+  puts "Slimmest margin of victory: #{diff_pos.min.round(1)}" if record_wl.count("W") > 0
+  puts "Slimmest margin of defeat: #{diff_neg.max.round(1)}" if record_wl.count("L") > 0
+  puts "Widest margin of defeat: #{score_diff.min.round(1)}" if record_wl.count("L") > 0
 
 end
+
 
 i = 0
 result_all.each do |team|
@@ -101,8 +108,6 @@ result_all.each do |team|
   i += 1
 end
 
-
-
 def total_my(*scores)
   total = 0
   scores.each {|score| total += score}
@@ -110,11 +115,3 @@ def total_my(*scores)
 end
 
 #puts total_my(1,4,6)
-
-
-
-def lowest_score()
-
-
-
-end
